@@ -3,14 +3,13 @@ resource "azuread_group" "aaddc_admins" {
   security_enabled = true
 }
 
-resource "azuread_service_principal" "eds" {
-  client_id = "2565bd9d-da50-47d4-8b85-4c97f669dc36" // published app for domain services
-}
+data "azuread_client_config" "current" {}
+
 
 resource "azuread_app_role_assignment" "eds" {
   app_role_id         = "e7bdf2ef-aa80-4a18-9801-0aa9e01feb8c" //id of app role 'user'
   principal_object_id = azuread_group.aaddc_admins.object_id
-  resource_object_id  = azuread_service_principal.eds.object_id
+  resource_object_id  = data.azuread_client_config.current.object_id
 }
 check "nsg_association" {
   data "azurerm_subnet" "eds" {
@@ -187,7 +186,7 @@ resource "azapi_resource" "eds" {
   location  = var.location
   parent_id = var.resource_group_id
   tags      = var.tags
-  body = jsonencode({
+  body = {
     properties = {
       domainConfigurationType = var.domain_configuration_type
       domainName              = var.domain
@@ -218,7 +217,7 @@ resource "azapi_resource" "eds" {
       sku       = var.sku
       syncScope = var.sync_scope
     }
-  })
+  }
   timeouts {
     create = "60m"
     delete = "60m"
