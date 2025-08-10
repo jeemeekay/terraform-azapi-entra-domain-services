@@ -1,6 +1,6 @@
 # The Enterprise App (service principal) that exposes the role
 data "azuread_service_principal" "aadds_sp" {
-  display_name = "Azure AD Domain Services" # or use application_id = "<GUID>"
+  display_name = "Microsoft Entra Domain Services" # or use application_id = "<GUID>"
 }
 
 resource "azuread_group" "aaddc_admins" {
