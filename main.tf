@@ -1,16 +1,27 @@
+# The Enterprise App (service principal) that exposes the role
+data "azuread_service_principal" "aadds_sp" {
+  display_name = "Azure AD Domain Services" # or use application_id = "<GUID>"
+}
+
 resource "azuread_group" "aaddc_admins" {
   display_name     = "AAD DC Administrators"
   security_enabled = true
 }
 
-data "azuread_client_config" "current" {}
-
+# Pick the app role you want (example: "AAD DC Administrator" role)
+locals {
+  aadds_admin_role_id = one([
+    for r in data.azuread_service_principal.aadds_sp.app_roles :
+    r.id if r.value == "AADDCAdministrator" && r.enabled
+  ])
+}
 
 resource "azuread_app_role_assignment" "eds" {
-  app_role_id         = "e7bdf2ef-aa80-4a18-9801-0aa9e01feb8c" //id of app role 'user'
-  principal_object_id = azuread_group.aaddc_admins.object_id
-  resource_object_id  = data.azuread_client_config.current.object_id
+  principal_object_id = azuread_group.aaddc_admins.object_id   # the GROUP that receives the role
+  resource_object_id  = data.azuread_service_principal.aadds_sp.object_id  # the SP exposing the role
+  app_role_id         = local.aadds_admin_role_id
 }
+
 check "nsg_association" {
   data "azurerm_subnet" "eds" {
     name                 = split("/", var.subnet.id)[10]
