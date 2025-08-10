@@ -78,6 +78,20 @@ resource "azurerm_network_security_rule" "AllowRD" {
   network_security_group_name = var.network_security_group.name
 }
 
+resource "azurerm_network_security_rule" "AllowLDAPS" {
+  name                        = "AllowLDAPS"
+  priority                    = 180
+  direction                   = "Inbound"
+  access                      = "Allow"
+  protocol                    = "Tcp"
+  source_port_range           = "*"
+  destination_port_range      = "636"
+  source_address_prefix       = "AzureActiveDirectoryDomainServices"
+  destination_address_prefix  = "*"
+  resource_group_name         = var.network_security_group.resource_group_name
+  network_security_group_name = var.network_security_group.name
+}
+
 resource "azurerm_network_security_rule" "AllowPSRemoting" {
   name                        = "AllowPSRemoting"
   priority                    = 301
