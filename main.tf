@@ -80,13 +80,13 @@ resource "azurerm_network_security_rule" "AllowRD" {
 
 resource "azurerm_network_security_rule" "AllowLDAPS" {
   name                        = "AllowLDAPS"
-  priority                    = 180
+  priority                    = 401
   direction                   = "Inbound"
   access                      = "Allow"
   protocol                    = "Tcp"
   source_port_range           = "*"
   destination_port_range      = "636"
-  source_address_prefix       = "AzureActiveDirectoryDomainServices"
+  source_address_prefix       = "*"
   destination_address_prefix  = "*"
   resource_group_name         = var.network_security_group.resource_group_name
   network_security_group_name = var.network_security_group.name
