@@ -20,16 +20,34 @@ resource "azuread_group" "aaddc_admins" {
 
 # Pick the app role you want (example: "AAD DC Administrator" role)
 locals {
-  aadds_admin_role_id = one([
-    for r in data.azuread_service_principal.aadds.app_roles :
-    r.id if r.value == "AADDCAdministrator" && r.enabled
-  ])
+  aadds_app_roles = try(data.azuread_service_principal.aadds.app_roles, [])
+
+  # Match by value OR display name; adjust the list if your tenant differs
+  aadds_admin_role_id = try(
+    one([
+      for r in local.aadds_app_roles :
+      r.id
+      if r.enabled && (
+        r.value == "AADDCAdministrator" ||
+        r.display_name == "User"
+      )
+    ]),
+    null
+  )
 }
+
 
 resource "azuread_app_role_assignment" "eds" {
   principal_object_id = azuread_group.aaddc_admins.object_id   # the GROUP that receives the role
   resource_object_id  = data.azuread_service_principal.aadds.object_id  # the SP exposing the role
   app_role_id         = local.aadds_admin_role_id
+
+  lifecycle {
+    precondition {
+      condition     = local.aadds_admin_role_id != null
+      error_message = "Could not find the 'AAD DC Administrator' app role on the Domain Controller Services SP."
+    }
+  }
 }
 
 check "nsg_association" {
