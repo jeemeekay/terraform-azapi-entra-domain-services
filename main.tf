@@ -1,6 +1,16 @@
 # The Enterprise App (service principal) that exposes the role
-data "azuread_service_principal" "aadds_sp" {
-  display_name = "Microsoft Entra Domain Services" # or use application_id = "<GUID>"
+
+resource "azuread_service_principal" "aadds" {
+  client_id = "2565bd9d-da50-47d4-8b85-4c97f669dc36"
+  lifecycle {
+    # First-party SPs shouldn’t be destroyed by TF
+    prevent_destroy = true
+  }
+}
+
+# Read it (optional if you just use the resource directly)
+data "azuread_service_principal" "aadds" {
+  object_id = azuread_service_principal.aadds.object_id
 }
 
 resource "azuread_group" "aaddc_admins" {
@@ -11,14 +21,14 @@ resource "azuread_group" "aaddc_admins" {
 # Pick the app role you want (example: "AAD DC Administrator" role)
 locals {
   aadds_admin_role_id = one([
-    for r in data.azuread_service_principal.aadds_sp.app_roles :
+    for r in data.azuread_service_principal.aadds.app_roles :
     r.id if r.value == "AADDCAdministrator" && r.enabled
   ])
 }
 
 resource "azuread_app_role_assignment" "eds" {
   principal_object_id = azuread_group.aaddc_admins.object_id   # the GROUP that receives the role
-  resource_object_id  = data.azuread_service_principal.aadds_sp.object_id  # the SP exposing the role
+  resource_object_id  = data.azuread_service_principal.aadds.object_id  # the SP exposing the role
   app_role_id         = local.aadds_admin_role_id
 }
 
